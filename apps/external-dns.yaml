@@ -1,0 +1,53 @@
+# external-dns (Cloudflare) — chart external-dns/external-dns 1.21.1, app v0.21.0.
+# Sincroniza los hosts de los Ingress de Traefik a registros DNS en Cloudflare.
+# REQUISITO: crear antes el Secret 'cloudflare-api-token' en el namespace external-dns
+# (ver ../secrets/cloudflare-api-token.example.yaml).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    targetRevision: 1.21.1
+    helm:
+      valuesObject:
+        provider:
+          name: cloudflare
+        env:
+          - name: CF_API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: cloudflare-api-token
+                key: apiKey
+        # Zonas que external-dns puede tocar (el token debe tener acceso a ambas).
+        domainFilters:
+          - oxa.gg
+          - spainsmp.com
+        sources:
+          - ingress
+          - service
+        # upsert-only = nunca borra registros que no creó él (seguro). Cambia a "sync"
+        # si quieres que también elimine los que sobran.
+        policy: upsert-only
+        registry: txt
+        txtOwnerId: oxa-k3s
+        txtPrefix: "_externaldns."
+        # Cloudflare: registros en modo DNS-only (nube gris). Para proxy (nube naranja)
+        # añade aquí: extraArgs: ["--cloudflare-proxied"]
+        interval: 1m
+        logLevel: info
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

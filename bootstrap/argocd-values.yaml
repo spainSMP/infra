@@ -1,0 +1,30 @@
+# ArgoCD — valores de instalación (chart argo/argo-cd 10.0.0, app v3.4.4)
+# Instalación de bootstrap (una sola vez); a partir de aquí Argo se autogestiona
+# y despliega Traefik + external-dns + spainsmp vía el App-of-Apps (bootstrap/root-app.yaml).
+
+global:
+  # Dominio público de la UI de Argo (se crea su DNS vía external-dns + Ingress Traefik).
+  domain: argocd.oxa.gg
+
+configs:
+  params:
+    # Traefik termina el TLS por delante → Argo en modo "insecure" (HTTP interno).
+    server.insecure: true
+
+server:
+  # Ingress de la UI servido por Traefik (clase por defecto).
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hostname: argocd.oxa.gg
+    tls: true
+
+# Alta disponibilidad desactivada (cluster pequeño). Súbelo si crece.
+redis-ha:
+  enabled: false
+controller:
+  replicas: 1
+repoServer:
+  replicas: 1
+applicationSet:
+  replicas: 1

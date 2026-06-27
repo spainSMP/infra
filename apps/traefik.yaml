@@ -1,0 +1,60 @@
+# Traefik (ingress interno del cluster) — chart traefik/traefik 41.0.0, app v3.7.5.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 41.0.0
+    helm:
+      valuesObject:
+        # Traefik es la IngressClass por defecto del cluster.
+        ingressClass:
+          enabled: true
+          isDefaultClass: true
+        providers:
+          kubernetesIngress:
+            enabled: true
+            # Publica la dirección del Service en el status de los Ingress
+            # → external-dns puede leer la IP/host y crear los registros DNS.
+            publishedService:
+              enabled: true
+          kubernetesCRD:
+            enabled: true
+            allowCrossNamespace: false
+        service:
+          # LoadBalancer estándar. Si el cluster no da LB, cambia a ClusterIP/NodePort.
+          type: LoadBalancer
+        ports:
+          web:
+            # HTTP → redirige a HTTPS.
+            redirectTo:
+              port: websecure
+          websecure:
+            tls:
+              enabled: true
+        # Dashboard solo accesible por port-forward (no expuesto).
+        ingressRoute:
+          dashboard:
+            enabled: false
+        logs:
+          general:
+            level: INFO
+          access:
+            enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

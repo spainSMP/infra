@@ -1,0 +1,5 @@
+# Nunca versionar secretos reales (solo los *.example.yaml).
+secrets/*.yaml
+!secrets/*.example.yaml
+*-kubeconfig.yaml
+kubeconfig*.yaml

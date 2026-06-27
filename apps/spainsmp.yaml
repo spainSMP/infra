@@ -1,0 +1,50 @@
+# spainsmp (web + API) — se nutre del chart helm-spainsmp.
+# REQUISITOS en el namespace spainsmp (ver ../secrets/spainsmp-secrets.example.yaml):
+#   - Secret 'spainsmp-api-db'      → clave database-url (DATABASE_URL, réplica de lectura)
+#   - Secret 'spainsmp-app-secrets' → DATABASE_PRIMARY_URL + DISCORD_CLIENT_ID/SECRET/GUILD_ID
+#   - Secret 'ghcr'                 → imagePullSecret para ghcr.io/spainsmp/* (privadas)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spainsmp
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/spainSMP/helm-spainsmp
+    targetRevision: main
+    path: .
+    helm:
+      valuesObject:
+        image:
+          registry: ghcr.io/spainsmp
+        imagePullSecrets:
+          - name: ghcr
+        ingress:
+          enabled: true
+          className: traefik
+          host: spainsmp.com
+          # TLS lo termina Traefik (cert por defecto). Para Let's Encrypt: cert-manager.
+          tls:
+            enabled: false
+        api:
+          database:
+            existingSecret: spainsmp-api-db
+          extraEnvFrom:
+            - secretRef:
+                name: spainsmp-app-secrets
+        web:
+          extraEnvFrom:
+            - secretRef:
+                name: spainsmp-app-secrets
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: spainsmp
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
