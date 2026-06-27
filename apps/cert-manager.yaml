@@ -1,0 +1,39 @@
+# cert-manager — chart jetstack/cert-manager v1.20.3.
+# Emite certs Let's Encrypt vía reto DNS-01 de Cloudflare (sirve para hosts INTERNOS
+# como argo.int.oxa.gg, porque valida con un TXT en la zona, no por HTTP público).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    # Se instala antes que los ClusterIssuer (que dependen de sus CRDs).
+    argocd.argoproj.io/sync-wave: "-2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.20.3
+    helm:
+      valuesObject:
+        crds:
+          enabled: true
+          keep: true
+        # El self-check del reto DNS-01 consulta resolvers PÚBLICOS (no el DNS interno
+        # del cluster), si no nunca vería los TXT que pone en Cloudflare.
+        extraArgs:
+          - --dns01-recursive-nameservers-only
+          - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

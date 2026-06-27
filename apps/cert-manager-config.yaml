@@ -1,0 +1,33 @@
+# ClusterIssuers de Let's Encrypt (DNS-01 Cloudflare). Se aplican DESPUÉS de
+# cert-manager (sync-wave -1 > -2), cuando sus CRDs ya existen.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/spainSMP/infra
+    targetRevision: main
+    path: cert-manager
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    # Reintenta hasta que cert-manager esté listo (las CRDs tardan un poco).
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        maxDuration: 5m
+        factor: 2

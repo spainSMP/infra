@@ -26,9 +26,12 @@ spec:
           enabled: true
           className: traefik
           host: spainsmp.com
-          # TLS lo termina Traefik (cert por defecto). Para Let's Encrypt: cert-manager.
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt-prod
+          # cert-manager emite el cert Let's Encrypt (DNS-01 Cloudflare).
           tls:
-            enabled: false
+            enabled: true
+            secretName: spainsmp-web-tls
         api:
           database:
             existingSecret: spainsmp-api-db

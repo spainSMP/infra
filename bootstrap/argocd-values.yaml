@@ -13,10 +13,13 @@ configs:
 
 server:
   # Ingress de la UI servido por Traefik (clase por defecto).
+  # cert-manager emite el cert Let's Encrypt vía DNS-01 (host interno, sin HTTP público).
   ingress:
     enabled: true
     ingressClassName: traefik
     hostname: argo.int.oxa.gg
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
     tls: true
 
 # Alta disponibilidad desactivada (cluster pequeño). Súbelo si crece.

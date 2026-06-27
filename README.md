@@ -6,13 +6,19 @@ Argo se instala una vez y a partir de ahí despliega y mantiene todo lo demás d
 ```
 ArgoCD (bootstrap, Helm)
 └── root-app  (App-of-Apps → este repo, carpeta apps/)
+    ├── cert-manager  → certs Let's Encrypt vía DNS-01 Cloudflare (v1.20.3)
+    ├── cert-manager-config → ClusterIssuers (staging + prod)
     ├── traefik       → ingress interno (chart traefik/traefik 41.0.0, v3.7.5)
     ├── external-dns  → DNS Cloudflare (chart 1.21.1, v0.21.0) zonas oxa.gg + spainsmp.com
     └── spainsmp      → web + API (chart github.com/spainSMP/helm-spainsmp)
 ```
 
 Versiones (latest a 2026-06-27): ArgoCD chart **10.0.0** (app v3.4.4), Traefik **41.0.0**
-(v3.7.5), external-dns **1.21.1** (v0.21.0).
+(v3.7.5), external-dns **1.21.1** (v0.21.0), cert-manager **v1.20.3**.
+
+**TLS de hosts internos** (`argo.int.oxa.gg`): cert-manager usa el reto **DNS-01** de
+Cloudflare, así que emite certs Let's Encrypt válidos sin exponer el host a internet
+(valida con un TXT en la zona, no por HTTP). Mismo issuer cubre `spainsmp.com`.
 
 ## Prerrequisitos
 
@@ -32,7 +38,8 @@ export KUBECONFIG=/ruta/a/oxa-kubeconfig.yaml
 
 # 1) Secrets (NO van en git) — copia los .example, rellénalos y aplícalos
 kubectl create namespace external-dns
-kubectl apply -f secrets/cloudflare-api-token.yaml
+kubectl create namespace cert-manager
+kubectl apply -f secrets/cloudflare-api-token.yaml   # Secret en external-dns Y cert-manager
 kubectl create namespace spainsmp
 kubectl apply -f secrets/spainsmp-secrets.yaml
 # (+ imagePullSecret ghcr, ver secrets/spainsmp-secrets.example.yaml)

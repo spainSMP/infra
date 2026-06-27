@@ -1,0 +1,48 @@
+# ClusterIssuers de Let's Encrypt con reto DNS-01 de Cloudflare.
+# REQUISITO: Secret 'cloudflare-api-token' (clave apiKey) en el namespace cert-manager
+# (mismo token que external-dns: Zone:Read + DNS:Edit en oxa.gg y spainsmp.com).
+#
+# Usa 'letsencrypt-staging' para probar (no gasta rate-limit) y cambia a
+# 'letsencrypt-prod' cuando emita bien.
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: polnavarro2001@gmail.com   # avisos de caducidad; cámbialo si quieres
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: apiKey
+        selector:
+          dnsZones:
+            - oxa.gg
+            - spainsmp.com
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: polnavarro2001@gmail.com   # avisos de caducidad; cámbialo si quieres
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: apiKey
+        selector:
+          dnsZones:
+            - oxa.gg
+            - spainsmp.com
