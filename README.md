@@ -59,7 +59,7 @@ kubectl -n spainsmp get pods,ingress
 # Password inicial de la UI de Argo (usuario admin):
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d; echo
-# UI: https://argocd.oxa.gg  (una vez external-dns cree el registro), o port-forward:
+# UI: https://argo.int.oxa.gg  (una vez external-dns cree el registro), o port-forward:
 kubectl -n argocd port-forward svc/argocd-server 8080:443
 ```
 

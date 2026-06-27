@@ -3,8 +3,8 @@
 # y despliega Traefik + external-dns + spainsmp vía el App-of-Apps (bootstrap/root-app.yaml).
 
 global:
-  # Dominio público de la UI de Argo (se crea su DNS vía external-dns + Ingress Traefik).
-  domain: argocd.oxa.gg
+  # Dominio interno de la UI de Argo (DNS vía external-dns + Ingress Traefik).
+  domain: argo.int.oxa.gg
 
 configs:
   params:
@@ -16,7 +16,7 @@ server:
   ingress:
     enabled: true
     ingressClassName: traefik
-    hostname: argocd.oxa.gg
+    hostname: argo.int.oxa.gg
     tls: true
 
 # Alta disponibilidad desactivada (cluster pequeño). Súbelo si crece.
